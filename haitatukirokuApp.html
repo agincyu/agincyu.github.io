@@ -1,0 +1,1791 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>業務記録システム「ぽーたる」</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ぽーたる">
+<meta name="theme-color" content="#0f1117">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #222535;
+    --border: #2e3248;
+    --accent: #4f8ef7;
+    --accent2: #2de6b0;
+    --text: #e8eaf0;
+    --text-muted: #7880a0;
+    --danger: #f74f6a;
+    --warning: #f7a94f;
+    --success: #4ff79e;
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Noto Sans JP', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(79,142,247,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(79,142,247,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper { position: relative; z-index: 1; max-width: 960px; margin: 0 auto; padding: 24px 16px; }
+
+  /* Header */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .logo-icon {
+    position: relative;
+    width: 56px; height: 56px;
+    background: linear-gradient(135deg, #0d1829 0%, #1a2540 100%);
+    border-radius: 14px;
+    border: 1px solid rgba(79,142,247,0.3);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 0 20px rgba(79,142,247,0.15), inset 0 1px 0 rgba(255,255,255,0.05);
+    animation: iconPulse 3s ease-in-out infinite;
+  }
+
+  .logo-icon::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(79,142,247,0.5), rgba(45,230,176,0.3));
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    padding: 1px;
+  }
+
+  .logo-icon svg {
+    width: 38px; height: 38px;
+    filter: drop-shadow(0 0 6px rgba(79,142,247,0.8));
+  }
+
+  @keyframes iconPulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(79,142,247,0.15), inset 0 1px 0 rgba(255,255,255,0.05); }
+    50% { box-shadow: 0 0 30px rgba(79,142,247,0.3), inset 0 1px 0 rgba(255,255,255,0.05); }
+  }
+
+  .logo-text { display: flex; flex-direction: column; gap: 2px; }
+
+  .logo h1 {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--text);
+  }
+
+  .logo-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .logo-badge::before {
+    content: '';
+    display: inline-block;
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--accent2);
+    animation: blink 2s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; } 50% { opacity: 0.2; }
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 4px;
+    margin-bottom: 28px;
+    border: 1px solid var(--border);
+    position: relative;
+  }
+
+  .tab-indicator {
+    position: absolute;
+    top: 4px; bottom: 4px;
+    left: 4px;
+    width: calc(50% - 6px);
+    background: linear-gradient(135deg, var(--accent), #3b6fd4);
+    border-radius: 8px;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 4px 12px rgba(79,142,247,0.35);
+    z-index: 0;
+  }
+
+  .tab-indicator.right { transform: translateX(calc(100% + 8px)); }
+
+  .tab {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    transition: color 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .tab.active { color: white; }
+  .tab:hover:not(.active) { color: var(--text); }
+
+  .tab-icon {
+    font-size: 15px;
+    transition: transform 0.2s;
+  }
+  .tab.active .tab-icon { transform: scale(1.15); }
+
+  /* Panels */
+  .panel { display: none; animation: fadeIn 0.3s ease; }
+  .panel.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  /* Card */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+
+  .card-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 20px;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .card-title::before {
+    content: '';
+    display: block;
+    width: 3px; height: 14px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  /* Form grid */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  .form-grid.cols3 { grid-template-columns: 1fr 1fr 1fr; }
+  .form-grid.cols1 { grid-template-columns: 1fr; }
+
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field.span2 { grid-column: span 2; }
+  .field.span3 { grid-column: span 3; }
+
+  label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  input, select, textarea {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    padding: 10px 12px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%;
+    outline: none;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(79,142,247,0.12);
+  }
+
+  select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237880a0' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; cursor: pointer; }
+
+  textarea { resize: vertical; min-height: 80px; }
+
+  /* Waypoint */
+  .waypoints { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+
+  .waypoint {
+    display: grid;
+    grid-template-columns: 1fr 90px 90px 100px 32px;
+    gap: 8px;
+    align-items: center;
+    background: var(--surface2);
+    border-radius: 8px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+  }
+
+  .waypoint input, .waypoint select {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    padding: 4px 4px;
+    font-size: 13px;
+  }
+
+  .waypoint input:focus, .waypoint select:focus {
+    border-bottom-color: var(--accent);
+    box-shadow: none;
+  }
+
+  .btn-icon {
+    background: none;
+    border: none;
+    color: var(--danger);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px;
+    border-radius: 6px;
+    transition: background 0.15s;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .btn-icon:hover { background: rgba(247,79,106,0.12); }
+
+  .waypoint-header {
+    display: grid;
+    grid-template-columns: 1fr 90px 90px 100px 32px;
+    gap: 8px;
+    padding: 0 12px;
+    margin-bottom: 4px;
+  }
+
+  .waypoint-header span {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Waiting section toggle */
+  .section-toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 0;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .toggle-switch {
+    position: relative;
+    width: 44px;
+    height: 24px;
+  }
+
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+
+  .toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: var(--surface2);
+    border-radius: 24px;
+    border: 1px solid var(--border);
+    transition: 0.2s;
+    cursor: pointer;
+  }
+
+  .toggle-slider::after {
+    content: '';
+    position: absolute;
+    left: 3px; top: 3px;
+    width: 16px; height: 16px;
+    background: var(--text-muted);
+    border-radius: 50%;
+    transition: 0.2s;
+  }
+
+  .toggle-switch input:checked + .toggle-slider { background: var(--accent); border-color: var(--accent); }
+  .toggle-switch input:checked + .toggle-slider::after { transform: translateX(20px); background: white; }
+
+  .toggle-label { font-size: 13px; font-weight: 500; }
+
+  .collapsible { display: none; }
+  .collapsible.open { display: block; }
+
+  /* Buttons */
+  .btn-row { display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px; }
+
+  .btn {
+    padding: 11px 24px;
+    border: none;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #3b6fd4);
+    color: white;
+  }
+
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(79,142,247,0.3); }
+  .btn-primary:active { transform: none; }
+
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-add {
+    background: rgba(79,142,247,0.1);
+    border: 1px dashed var(--accent);
+    color: var(--accent);
+    font-size: 13px;
+    padding: 8px 16px;
+  }
+
+  .btn-add:hover { background: rgba(79,142,247,0.18); }
+
+  .btn-danger-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--danger);
+  }
+
+  .btn-danger-outline:hover { border-color: var(--danger); background: rgba(247,79,106,0.08); }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    background: var(--success);
+    color: #0a1f14;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 14px;
+    z-index: 100;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .toast.show { opacity: 1; transform: none; }
+
+  /* Records list */
+  .record-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .record-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    align-items: center;
+    gap: 16px;
+    transition: border-color 0.2s;
+    cursor: pointer;
+  }
+
+  .record-item:hover { border-color: var(--accent); }
+
+  .record-date {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--accent);
+    white-space: nowrap;
+    background: rgba(79,142,247,0.1);
+    padding: 4px 10px;
+    border-radius: 6px;
+  }
+
+  .record-info { min-width: 0; }
+  .record-name { font-weight: 600; font-size: 14px; margin-bottom: 2px; }
+  .record-sub { font-size: 12px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .record-km {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--accent2);
+    white-space: nowrap;
+  }
+
+  .record-actions { display: flex; gap: 6px; }
+
+  .btn-sm {
+    padding: 6px 12px;
+    font-size: 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+
+  .btn-sm:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-sm.del:hover { border-color: var(--danger); color: var(--danger); }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+  }
+
+  .empty-state .icon { font-size: 48px; margin-bottom: 16px; opacity: 0.4; }
+  .empty-state p { font-size: 15px; }
+
+  /* Modal */
+  .modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 50;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .modal-backdrop.open { display: flex; }
+
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    max-width: 680px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 28px;
+    animation: modalIn 0.25s ease;
+  }
+
+  @keyframes modalIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: none; } }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .modal-title { font-size: 16px; font-weight: 700; }
+
+  .modal-close {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+
+  .modal-close:hover { color: var(--text); border-color: var(--text); }
+
+  /* Detail table in modal */
+  .detail-section { margin-bottom: 20px; }
+  .detail-section-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .detail-item { }
+  .detail-label { font-size: 11px; color: var(--text-muted); margin-bottom: 2px; }
+  .detail-value { font-size: 14px; font-weight: 500; }
+
+  .waypoint-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .waypoint-table th { text-align: left; padding: 6px 8px; color: var(--text-muted); font-size: 11px; font-weight: 700; text-transform: uppercase; border-bottom: 1px solid var(--border); }
+  .waypoint-table td { padding: 8px; border-bottom: 1px solid rgba(46,50,72,0.5); }
+
+  /* Stats bar */
+  .stats-bar {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    text-align: center;
+  }
+
+  .stat-value { font-family: 'DM Mono', monospace; font-size: 24px; font-weight: 500; color: var(--accent); }
+  .stat-label { font-size: 11px; color: var(--text-muted); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* Filter bar */
+  .filter-bar { display: flex; gap: 10px; margin-bottom: 16px; }
+  .filter-bar input, .filter-bar select { flex: 1; }
+
+  /* Download btn */
+  .download-row { display: flex; gap: 10px; margin-bottom: 20px; justify-content: flex-end; }
+
+  /* ── Tablet ── */
+  @media (max-width: 768px) {
+    .wrapper { padding: 16px 12px; }
+    .form-grid.cols3 { grid-template-columns: 1fr 1fr; }
+    .download-row { flex-wrap: wrap; }
+    .download-row .btn, .download-row label.btn { flex: 1 1 auto; justify-content: center; font-size: 12px; padding: 8px 10px; }
+  }
+
+  /* ── Mobile ── */
+  @media (max-width: 480px) {
+    .wrapper { padding: 12px 10px; }
+
+    /* Header */
+    header { margin-bottom: 20px; padding-bottom: 14px; }
+    .logo-icon { width: 44px; height: 44px; border-radius: 11px; }
+    .logo-icon svg { width: 28px; height: 28px; }
+    .logo h1 { font-size: 15px; }
+    .logo-badge { font-size: 9px; letter-spacing: 0.8px; }
+    .logo { gap: 10px; }
+
+    /* Tabs */
+    .tabs { margin-bottom: 16px; }
+    .tab { font-size: 12px; padding: 9px 6px; gap: 4px; }
+    .tab-icon { font-size: 13px; }
+
+    /* Cards */
+    .card { padding: 16px 14px; margin-bottom: 12px; }
+    .card-title { font-size: 11px; margin-bottom: 14px; }
+
+    /* Forms */
+    .form-grid { grid-template-columns: 1fr; gap: 10px; }
+    .form-grid.cols3 { grid-template-columns: 1fr; }
+    .field.span2, .field.span3 { grid-column: span 1; }
+    label { font-size: 10px; }
+    input, select, textarea { font-size: 15px; padding: 10px 11px; } /* 15px prevents iOS zoom */
+
+    /* Waypoints — スタック表示 */
+    .waypoint-header { display: none; }
+    .waypoint {
+      display: flex; flex-direction: column; gap: 8px;
+      padding: 12px;
+      position: relative;
+    }
+    .waypoint .btn-icon {
+      position: absolute; top: 8px; right: 8px;
+    }
+    .waypoint input, .waypoint select {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 15px;
+      width: 100%;
+    }
+    .waypoint input:focus, .waypoint select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(79,142,247,0.12);
+    }
+    /* waypoint内ラベル追加 */
+    .waypoint input[placeholder="地点名"]::placeholder { color: var(--text-muted); }
+
+    /* Section toggle */
+    .toggle-label { font-size: 12px; }
+
+    /* Buttons */
+    .btn-row { flex-direction: column-reverse; gap: 8px; }
+    .btn-row .btn { width: 100%; justify-content: center; padding: 13px; font-size: 14px; }
+    .btn-add { width: 100%; justify-content: center; margin-top: 4px; }
+
+    /* Stats */
+    .stats-bar { grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+    .stats-bar .stat-card:last-child { grid-column: span 2; }
+    .stat-value { font-size: 20px; }
+    .stat-label { font-size: 10px; }
+
+    /* Filter */
+    .filter-bar { flex-direction: column; gap: 8px; }
+    .filter-bar input, .filter-bar select { width: 100%; }
+
+    /* Download row */
+    .download-row { flex-direction: column; gap: 8px; margin-bottom: 14px; }
+    .download-row .btn, .download-row label.btn {
+      width: 100%; justify-content: center;
+      font-size: 13px; padding: 11px;
+      box-sizing: border-box;
+    }
+
+    /* Record list */
+    .record-item {
+      grid-template-columns: 1fr;
+      gap: 8px;
+      padding: 14px;
+    }
+    .record-date { display: inline-block; }
+    .record-km { color: var(--accent2); font-size: 13px; }
+    .record-actions { display: flex; gap: 8px; }
+    .record-actions .btn-sm { flex: 1; text-align: center; padding: 8px; font-size: 13px; }
+
+    /* Modal */
+    .modal { padding: 20px 16px; border-radius: 12px; max-height: 90vh; }
+    .modal-title { font-size: 14px; }
+    .detail-grid { grid-template-columns: 1fr; gap: 8px; }
+
+    /* Toast */
+    .toast { bottom: 16px; right: 12px; left: 12px; font-size: 13px; justify-content: center; }
+  }
+
+  /* Date/time picker icons - bright color & larger */
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(1) brightness(2);
+    opacity: 0.85;
+    cursor: pointer;
+    width: 22px;
+    height: 22px;
+    padding: 2px;
+    scale: 1.4;
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator:hover,
+  input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover,
+  input[type="time"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+    scale: 1.6;
+  }
+
+  /* ── Splash Screen ── */
+  #splash {
+    position: fixed; inset: 0; z-index: 9999;
+    background: #0a0d14;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 28px;
+    transition: opacity 0.5s ease, visibility 0.5s ease;
+  }
+  #splash.hidden { opacity: 0; visibility: hidden; }
+
+  .splash-meter {
+    position: relative;
+    width: 220px; height: 110px;
+  }
+
+  .splash-title {
+    font-size: 22px; font-weight: 700;
+    color: var(--text); letter-spacing: -0.5px;
+    text-align: center;
+    opacity: 0;
+    animation: splashFadeIn 0.6s ease 0.3s forwards;
+  }
+
+  .splash-sub {
+    font-size: 11px; color: var(--text-muted);
+    letter-spacing: 2px; text-transform: uppercase;
+    font-family: 'DM Mono', monospace;
+    text-align: center;
+    opacity: 0;
+    animation: splashFadeIn 0.6s ease 0.5s forwards;
+  }
+
+  .splash-bar-wrap {
+    width: 180px; height: 3px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 2px; overflow: hidden;
+    opacity: 0;
+    animation: splashFadeIn 0.4s ease 0.8s forwards;
+  }
+
+  .splash-bar {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    animation: loadBar 1.6s cubic-bezier(0.4,0,0.2,1) 0.9s forwards;
+  }
+
+  @keyframes splashFadeIn { to { opacity: 1; } }
+  @keyframes loadBar { to { width: 100%; } }
+</style>
+</head>
+<body>
+
+<!-- Splash Screen -->
+<div id="splash">
+  <div class="splash-meter">
+    <svg viewBox="0 0 220 120" fill="none" xmlns="http://www.w3.org/2000/svg" width="220" height="120">
+      <defs>
+        <linearGradient id="sg1" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="#4f8ef7"/>
+          <stop offset="60%" stop-color="#2de6b0"/>
+        </linearGradient>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <!-- outer circle arc (半円) -->
+      <path d="M 20 105 A 90 90 0 0 1 200 105" stroke="rgba(255,255,255,0.06)" stroke-width="8" fill="none" stroke-linecap="round"/>
+      <!-- colored arc track (アニメ) -->
+      <path id="splashArc" d="M 20 105 A 90 90 0 0 1 200 105"
+            stroke="url(#sg1)" stroke-width="8" fill="none" stroke-linecap="round"
+            stroke-dasharray="283" stroke-dashoffset="283"
+            filter="url(#glow)"/>
+      <!-- tick marks -->
+      <line x1="110" y1="15" x2="110" y2="28" stroke="rgba(255,255,255,0.35)" stroke-width="2" stroke-linecap="round"/>
+      <line x1="20" y1="105" x2="32" y2="105" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="200" y1="105" x2="188" y2="105" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="38" y1="42" x2="47" y2="51" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="182" y1="42" x2="173" y2="51" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="65" y1="20" x2="70" y2="31" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="155" y1="20" x2="150" y2="31" stroke="rgba(255,255,255,0.15)" stroke-width="1.5" stroke-linecap="round"/>
+      <!-- labels -->
+      <text x="16" y="118" fill="rgba(255,255,255,0.3)" font-size="9" font-family="DM Mono,monospace">0</text>
+      <text x="100" y="12" fill="rgba(255,255,255,0.3)" font-size="9" font-family="DM Mono,monospace">180</text>
+      <text x="196" y="118" fill="rgba(255,255,255,0.3)" font-size="9" font-family="DM Mono,monospace" text-anchor="end">360</text>
+      <!-- needle hub ring -->
+      <circle cx="110" cy="105" r="10" fill="#0f1117" stroke="rgba(79,142,247,0.4)" stroke-width="1.5"/>
+      <!-- needle (アニメ) -->
+      <line id="splashNeedle" x1="110" y1="105" x2="110" y2="18"
+            stroke="url(#sg1)" stroke-width="2.5" stroke-linecap="round"
+            filter="url(#glow)"
+            style="transform-origin:110px 105px; transform:rotate(-90deg);"/>
+      <!-- center dot -->
+      <circle cx="110" cy="105" r="4" fill="#4f8ef7"/>
+      <circle cx="110" cy="105" r="2" fill="#2de6b0"/>
+      <!-- speed value (アニメ) -->
+      <text id="splashSpeed" x="110" y="80" fill="white" font-size="22" font-weight="700"
+            font-family="DM Mono,monospace" text-anchor="middle">0</text>
+      <text x="110" y="95" fill="rgba(255,255,255,0.4)" font-size="8"
+            font-family="DM Mono,monospace" text-anchor="middle">km/h</text>
+    </svg>
+  </div>
+  <div class="splash-title">業務記録システム「ぽーたる」</div>
+  <div class="splash-sub">軽貨物運送 / Business Log</div>
+  <div class="splash-bar-wrap"><div class="splash-bar"></div></div>
+</div>
+
+<div class="wrapper">
+  <header>
+    <div class="logo">
+      <div class="logo-icon">
+        <!-- Speedometer SVG icon -->
+        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="arcGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#4f8ef7"/>
+              <stop offset="100%" stop-color="#2de6b0"/>
+            </linearGradient>
+          </defs>
+          <!-- outer ring -->
+          <circle cx="24" cy="24" r="20" stroke="rgba(79,142,247,0.15)" stroke-width="2" fill="none"/>
+          <!-- arc track -->
+          <path d="M 7.5 33 A 17 17 0 1 1 40.5 33" stroke="rgba(255,255,255,0.06)" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+          <!-- arc fill (gauge) -->
+          <path d="M 7.5 33 A 17 17 0 1 1 40.5 33" stroke="url(#arcGrad)" stroke-width="3.5" fill="none" stroke-linecap="round"
+                stroke-dasharray="80" stroke-dashoffset="20"/>
+          <!-- tick marks -->
+          <line x1="24" y1="6" x2="24" y2="9.5" stroke="rgba(255,255,255,0.3)" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="8.5" y1="14" x2="10.5" y2="16.5" stroke="rgba(255,255,255,0.2)" stroke-width="1" stroke-linecap="round"/>
+          <line x1="39.5" y1="14" x2="37.5" y2="16.5" stroke="rgba(255,255,255,0.2)" stroke-width="1" stroke-linecap="round"/>
+          <line x1="6" y1="28" x2="9.5" y2="28" stroke="rgba(255,255,255,0.2)" stroke-width="1" stroke-linecap="round"/>
+          <line x1="42" y1="28" x2="38.5" y2="28" stroke="rgba(255,255,255,0.2)" stroke-width="1" stroke-linecap="round"/>
+          <!-- needle hub -->
+          <circle cx="24" cy="30" r="3" fill="#1a2540" stroke="rgba(79,142,247,0.6)" stroke-width="1.2"/>
+          <circle cx="24" cy="30" r="1.2" fill="#4f8ef7"/>
+          <!-- needle -->
+          <line x1="24" y1="30" x2="14" y2="13" stroke="url(#arcGrad)" stroke-width="1.6" stroke-linecap="round"/>
+          <!-- center dot glow -->
+          <circle cx="24" cy="30" r="1" fill="#2de6b0" opacity="0.9"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <h1>業務記録システム「ぽーたる」</h1>
+        <span class="logo-badge">軽貨物運送 / Business Log</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="tabs">
+    <div class="tab-indicator" id="tabIndicator"></div>
+    <button class="tab active" onclick="switchTab('input')">
+      <span class="tab-icon">✏️</span> 記録入力
+    </button>
+    <button class="tab" onclick="switchTab('list')">
+      <span class="tab-icon">📋</span> 記録一覧
+    </button>
+  </div>
+
+  <!-- INPUT PANEL -->
+  <div id="panel-input" class="panel active">
+
+    <!-- 基本情報 -->
+    <div class="card">
+      <div class="card-title">基本情報</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>運転者氏名</label>
+          <input type="text" id="driverName" placeholder="例：山田太郎">
+        </div>
+        <div class="field">
+          <label>日付</label>
+          <input type="date" id="workDate">
+        </div>
+        <div class="field">
+          <label>車両番号（地名）</label>
+          <select id="plateArea" onchange="onPlateAreaChange()">
+            <option value="">選択</option>
+            <optgroup label="── 関東 ──">
+              <option>品川</option><option>練馬</option><option>足立</option><option>多摩</option>
+              <option>横浜</option><option>川崎</option><option>相模</option><option>湘南</option>
+              <option>春日部</option><option>千葉</option><option>習志野</option><option>柏</option>
+              <option>成田</option><option>水戸</option><option>土浦</option><option>宇都宮</option>
+              <option>那須</option><option>高崎</option><option>前橋</option><option>川越</option>
+              <option>所沢</option>
+            </optgroup>
+            <optgroup label="── ご当地 ──">
+              <option>杉並</option><option>世田谷</option><option>江東</option><option>葛飾</option>
+              <option>板橋</option><option>北</option><option>荒川</option><option>墨田</option>
+              <option>江戸川</option><option>目黒</option><option>渋谷</option><option>新宿</option>
+              <option>文京</option><option>台東</option><option>港</option><option>中央</option>
+              <option>千代田</option><option>中野</option><option>豊島</option><option>品川区</option>
+              <option>大田</option><option>杉並区</option>
+              <option>川口</option><option>越谷</option><option>熊谷</option><option>本庄</option>
+              <option>つくば</option><option>野田</option>
+              <option>相模ナンバー</option><option>伊豆</option><option>沼津</option><option>静岡</option>
+            </optgroup>
+            <optgroup label="── 中部 ──">
+              <option>名古屋</option><option>愛知</option><option>三河</option><option>尾張小牧</option>
+              <option>豊田</option><option>岡崎</option><option>豊橋</option>
+              <option>岐阜</option><option>長野</option><option>松本</option><option>金沢</option>
+              <option>富山</option><option>福井</option><option>新潟</option>
+            </optgroup>
+            <optgroup label="── 関西 ──">
+              <option>大阪</option><option>なにわ</option><option>和泉</option><option>堺</option>
+              <option>神戸</option><option>姫路</option><option>京都</option><option>滋賀</option>
+              <option>奈良</option><option>和歌山</option>
+            </optgroup>
+            <optgroup label="── 中国・四国 ──">
+              <option>広島</option><option>岡山</option><option>福山</option><option>山口</option>
+              <option>松山</option><option>高知</option><option>徳島</option><option>高松</option>
+            </optgroup>
+            <optgroup label="── 九州・沖縄 ──">
+              <option>福岡</option><option>北九州</option><option>筑豊</option><option>久留米</option>
+              <option>佐賀</option><option>長崎</option><option>熊本</option><option>大分</option>
+              <option>宮崎</option><option>鹿児島</option><option>沖縄</option>
+            </optgroup>
+            <optgroup label="── 北海道・東北 ──">
+              <option>札幌</option><option>函館</option><option>旭川</option><option>釧路</option>
+              <option>仙台</option><option>盛岡</option><option>秋田</option><option>山形</option>
+              <option>福島</option><option>青森</option>
+            </optgroup>
+            <option value="__other__">その他（直接入力）</option>
+          </select>
+          <input type="text" id="plateAreaCustom" placeholder="地名を入力" style="display:none; margin-top:6px;">
+        </div>
+        <div class="field">
+          <label>車両番号（分類番号・かな・番号）</label>
+          <input type="text" id="plateNum" placeholder="例：100 あ 1234">
+        </div>
+      </div>
+    </div>
+
+    <!-- 業務開始・終了 -->
+    <div class="card">
+      <div class="card-title">業務開始・終了</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>業務開始地点</label>
+          <input type="text" id="startLocation" placeholder="例：○○営業所 車庫" list="startLocationList" autocomplete="off">
+          <datalist id="startLocationList"></datalist>
+        </div>
+        <div class="field">
+          <label>業務開始日時</label>
+          <input type="datetime-local" id="startDatetime">
+        </div>
+        <div class="field">
+          <label>業務終了地点</label>
+          <input type="text" id="endLocation" placeholder="例：○○営業所 車庫" list="endLocationList" autocomplete="off">
+          <datalist id="endLocationList"></datalist>
+        </div>
+        <div class="field">
+          <label>業務終了日時</label>
+          <input type="datetime-local" id="endDatetime">
+        </div>
+        <div class="field">
+          <label>走行距離計（出発時）km</label>
+          <input type="number" id="odoStart" placeholder="例：10100">
+        </div>
+        <div class="field">
+          <label>走行距離計（到着時）km</label>
+          <input type="number" id="odoEnd" placeholder="例：10250">
+        </div>
+      </div>
+    </div>
+
+    <!-- 経過地点 -->
+    <div class="card">
+      <div class="card-title">主な経過地点</div>
+      <div class="waypoint-header">
+        <span>地点名</span>
+        <span>着時刻</span>
+        <span>発時刻</span>
+        <span>備考</span>
+        <span></span>
+      </div>
+      <div class="waypoints" id="waypointList"></div>
+      <button class="btn btn-add" onclick="addWaypoint()">＋ 地点を追加</button>
+    </div>
+
+    <!-- 業務交替 -->
+    <div class="card">
+      <div class="card-title">業務交替（該当する場合）</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>交替地点</label>
+          <input type="text" id="handoverLocation" placeholder="例：○○営業所 車庫">
+        </div>
+        <div class="field">
+          <label>交替日時</label>
+          <input type="datetime-local" id="handoverDatetime">
+        </div>
+      </div>
+    </div>
+
+    <!-- 30分以上待機 -->
+    <div class="card">
+      <div>
+        <label class="section-toggle">
+          <div class="toggle-switch">
+            <input type="checkbox" id="waitingToggle" onchange="toggleSection('waitingSection', this)">
+            <div class="toggle-slider"></div>
+          </div>
+          <span class="toggle-label">荷主都合による30分以上の待機あり</span>
+        </label>
+      </div>
+      <div class="collapsible" id="waitingSection">
+        <div style="height:16px"></div>
+        <div class="form-grid">
+          <div class="field span2">
+            <label>集貨地点等</label>
+            <input type="text" id="waitLocation" placeholder="例：○○物流センター">
+          </div>
+          <div class="field">
+            <label>到着指定日時（荷主指定）</label>
+            <input type="datetime-local" id="waitArrivalSpec">
+          </div>
+          <div class="field">
+            <label>実際の到着日時</label>
+            <input type="datetime-local" id="waitArrivalActual">
+          </div>
+          <div class="field">
+            <label>荷役作業 開始</label>
+            <input type="datetime-local" id="waitWorkStart">
+          </div>
+          <div class="field">
+            <label>荷役作業 終了</label>
+            <input type="datetime-local" id="waitWorkEnd">
+          </div>
+          <div class="field">
+            <label>附帯業務 開始</label>
+            <input type="datetime-local" id="waitSubStart">
+          </div>
+          <div class="field">
+            <label>附帯業務 終了</label>
+            <input type="datetime-local" id="waitSubEnd">
+          </div>
+          <div class="field">
+            <label>出発日時</label>
+            <input type="datetime-local" id="waitDepart">
+          </div>
+          <div class="field">
+            <label>備考</label>
+            <input type="text" id="waitNote" placeholder="例：待機時間 9:30〜10:10">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 荷役作業等 -->
+    <div class="card">
+      <div>
+        <label class="section-toggle">
+          <div class="toggle-switch">
+            <input type="checkbox" id="cargoToggle" onchange="toggleSection('cargoSection', this)">
+            <div class="toggle-slider"></div>
+          </div>
+          <span class="toggle-label">荷役作業又は附帯業務を実施</span>
+        </label>
+      </div>
+      <div class="collapsible" id="cargoSection">
+        <div style="height:16px"></div>
+        <div class="form-grid">
+          <div class="field span2">
+            <label>集貨地点等（住所）</label>
+            <input type="text" id="cargoLocation" placeholder="例：○○県○○市○○1-1-1">
+          </div>
+          <div class="field">
+            <label>荷役作業等 開始</label>
+            <input type="datetime-local" id="cargoStart">
+          </div>
+          <div class="field">
+            <label>荷役作業等 終了</label>
+            <input type="datetime-local" id="cargoEnd">
+          </div>
+          <div class="field span2">
+            <label>荷役作業等の内容</label>
+            <input type="text" id="cargoContent" placeholder="例：個別に置かれている荷物の荷造り作業">
+          </div>
+          <div class="field">
+            <label>荷主の確認</label>
+            <select id="cargoConfirm">
+              <option value="">選択</option>
+              <option>口頭により確認あり</option>
+              <option>書面により確認あり</option>
+              <option>確認なし</option>
+              <option>確認が得られなかった</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>備考</label>
+            <input type="text" id="cargoNote">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 事故・異常 -->
+    <div class="card">
+      <div>
+        <label class="section-toggle">
+          <div class="toggle-switch">
+            <input type="checkbox" id="incidentToggle" onchange="toggleSection('incidentSection', this)">
+            <div class="toggle-slider"></div>
+          </div>
+          <span class="toggle-label">事故・運行遅延・その他異常あり</span>
+        </label>
+      </div>
+      <div class="collapsible" id="incidentSection">
+        <div style="height:16px"></div>
+        <div class="field">
+          <label>概要及び要因</label>
+          <textarea id="incidentDetail" placeholder="例：国道○○号線が渋滞のため、○○時に○○へ到着する予定であったが、大幅に遅れ○○時に到着した。"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-outline" onclick="clearForm()">🗑️ クリア</button>
+      <button class="btn btn-primary" onclick="saveRecord()">💾 記録を保存</button>
+    </div>
+  </div>
+
+  <!-- LIST PANEL -->
+  <div id="panel-list" class="panel">
+    <div class="stats-bar" id="statsBar">
+      <div class="stat-card"><div class="stat-value" id="statTotal">0</div><div class="stat-label">総記録件数</div></div>
+      <div class="stat-card"><div class="stat-value" id="statKm">0</div><div class="stat-label">累計走行距離 (km)</div></div>
+      <div class="stat-card"><div class="stat-value" id="statMonth">0</div><div class="stat-label">今月の件数</div></div>
+    </div>
+
+    <div class="filter-bar">
+      <input type="text" id="filterName" placeholder="🔍 氏名で絞り込み" oninput="renderList()">
+      <input type="month" id="filterMonth" oninput="renderList()">
+    </div>
+
+    <div class="download-row">
+      <label class="btn btn-outline" style="font-size:13px; padding:8px 16px; cursor:pointer;" title="バックアップJSONを読み込んで復元">
+        📂 JSONから復元
+        <input type="file" id="jsonImport" accept=".json" style="display:none" onchange="importJSON(event)">
+      </label>
+      <button class="btn btn-outline" onclick="exportJSON()" style="font-size:13px; padding:8px 16px;" title="全記録をJSONでバックアップ">💾 JSONバックアップ</button>
+      <button class="btn btn-outline" onclick="downloadCSV()" style="font-size:13px; padding:8px 16px;">⬇️ CSVダウンロード</button>
+    </div>
+
+    <div id="recordList" class="record-list"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Detail Modal -->
+<div class="modal-backdrop" id="modalBackdrop" onclick="closeModal(event)">
+  <div class="modal" id="modalContent">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle">業務記録 詳細</div>
+      <button class="modal-close" onclick="closeModalDirect()">✕</button>
+    </div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'karigo_records_v1';
+const DRIVER_KEY = 'karigo_driver';
+const PERSIST_KEY = 'karigo_persist'; // 車両番号・開始終了地点・前回odo
+let records = [];
+
+// ---- Splash animation ----
+function runSplash() {
+  const arc = document.getElementById('splashArc');
+  const needle = document.getElementById('splashNeedle');
+  const speedTxt = document.getElementById('splashSpeed');
+  if (!arc || !needle) { hideSplash(); return; }
+
+  // arc: stroke-dashoffset 283→0 で半円を描く
+  const totalDash = 283;
+  const peakDeg = 68;   // 最大針角度 (右上付近)
+  const settleDeg = 40; // 落ち着く角度
+  const duration = 1800;
+  const settle = 400;
+  const start = performance.now();
+
+  function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+  function easeInOut(t) { return t < 0.5 ? 2*t*t : 1-Math.pow(-2*t+2,2)/2; }
+
+  function frame(now) {
+    const elapsed = now - start;
+    const phase1 = Math.min(elapsed / duration, 1);
+    const e1 = easeOut(phase1);
+
+    // sweep arc
+    arc.setAttribute('stroke-dashoffset', totalDash * (1 - e1));
+
+    // needle: -90deg (左端) → +peakDeg
+    const needleDeg = -90 + (90 + peakDeg) * e1;
+    needle.style.transform = `rotate(${needleDeg}deg)`;
+
+    // speed counter
+    const speed = Math.round(360 * e1);
+    speedTxt.textContent = speed;
+
+    if (phase1 < 1) {
+      requestAnimationFrame(frame);
+    } else {
+      // settle back
+      const s2start = performance.now();
+      function settle2(now2) {
+        const t = Math.min((now2 - s2start) / settle, 1);
+        const e2 = easeInOut(t);
+        const deg = peakDeg + (settleDeg - peakDeg) * e2;
+        needle.style.transform = `rotate(${deg}deg)`;
+        const sp = Math.round(360 - (360 - 240) * e2);
+        speedTxt.textContent = sp;
+        if (t < 1) requestAnimationFrame(settle2);
+        else hideSplash();
+      }
+      requestAnimationFrame(settle2);
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+function hideSplash() {
+  setTimeout(() => {
+    const s = document.getElementById('splash');
+    if (s) s.classList.add('hidden');
+    setTimeout(() => { if (s) s.remove(); }, 600);
+  }, 300);
+}
+
+// ---- Location history (直近10件) ----
+const LOC_HISTORY_KEY = 'karigo_loc_history';
+
+function getLocationHistory() {
+  try { return JSON.parse(localStorage.getItem(LOC_HISTORY_KEY)) || { start: [], end: [] }; }
+  catch { return { start: [], end: [] }; }
+}
+
+function addLocationHistory(type, value) {
+  if (!value) return;
+  const h = getLocationHistory();
+  const arr = h[type] || [];
+  // 重複除去して先頭に追加、10件上限
+  const filtered = arr.filter(v => v !== value);
+  h[type] = [value, ...filtered].slice(0, 5);
+  localStorage.setItem(LOC_HISTORY_KEY, JSON.stringify(h));
+}
+
+function buildLocationDatalist(type, datalistId) {
+  const h = getLocationHistory();
+  const dl = document.getElementById(datalistId);
+  if (!dl) return;
+  dl.innerHTML = (h[type] || []).map(v => `<option value="${v.replace(/"/g,'&quot;')}">`).join('');
+}
+
+// ---- Plate area "その他" handler ----
+function onPlateAreaChange() {
+  const sel = document.getElementById('plateArea');
+  const custom = document.getElementById('plateAreaCustom');
+  if (sel.value === '__other__') {
+    custom.style.display = 'block';
+    custom.focus();
+  } else {
+    custom.style.display = 'none';
+    custom.value = '';
+  }
+}
+
+function getPlateArea() {
+  const sel = document.getElementById('plateArea');
+  if (sel.value === '__other__') {
+    return document.getElementById('plateAreaCustom').value.trim() || 'その他';
+  }
+  return sel.value;
+}
+
+// ---- Init ----
+function init() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) records = JSON.parse(saved);
+
+  // Default date/time
+  const now = new Date();
+  document.getElementById('workDate').value = toDateStr(now);
+  document.getElementById('startDatetime').value = toDatetimeLocal(new Date(now.setHours(9,0,0)));
+  document.getElementById('endDatetime').value = toDatetimeLocal(new Date(new Date().setHours(17,0,0)));
+
+  // Restore driver name
+  const dn = localStorage.getItem(DRIVER_KEY);
+  if (dn) document.getElementById('driverName').value = dn;
+
+  // Restore persistent fields
+  const ps = localStorage.getItem(PERSIST_KEY);
+  if (ps) {
+    const p = JSON.parse(ps);
+    if (p.plateArea) {
+      const sel = document.getElementById('plateArea');
+      // check if value exists in options
+      const opt = Array.from(sel.options).find(o => o.value === p.plateArea || o.text === p.plateArea);
+      if (opt) {
+        sel.value = opt.value || opt.text;
+      } else {
+        // custom value
+        sel.value = '__other__';
+        document.getElementById('plateAreaCustom').style.display = 'block';
+        document.getElementById('plateAreaCustom').value = p.plateArea;
+      }
+    }
+    if (p.plateNum)      document.getElementById('plateNum').value = p.plateNum;
+    if (p.odoEnd)        {
+      document.getElementById('odoStart').value = p.odoEnd;
+      // odo引き継ぎのヒント表示
+      const hint = document.createElement('div');
+      hint.style.cssText = 'font-size:11px;color:var(--accent2);margin-top:4px';
+      hint.textContent = `↑ 前回到着時の値 ${p.odoEnd} km を引き継ぎました`;
+      const odoField = document.getElementById('odoStart').parentElement;
+      odoField.appendChild(hint);
+      setTimeout(() => hint.remove(), 5000);
+    }
+  }
+
+  addWaypoint(); // start with one empty waypoint
+  // 地点候補をdatalistに反映
+  buildLocationDatalist('start', 'startLocationList');
+  buildLocationDatalist('end',   'endLocationList');
+  runSplash();
+}
+
+function toDateStr(d) {
+  return d.toISOString().split('T')[0];
+}
+
+function toDatetimeLocal(d) {
+  const pad = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+// ---- Tabs ----
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', (i===0 && tab==='input') || (i===1 && tab==='list'));
+  });
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+  const ind = document.getElementById('tabIndicator');
+  if (ind) ind.classList.toggle('right', tab === 'list');
+  if (tab === 'list') renderList();
+}
+
+// ---- Toggle sections ----
+function toggleSection(id, cb) {
+  document.getElementById(id).classList.toggle('open', cb.checked);
+}
+
+// ---- Waypoints ----
+let wpCount = 0;
+function addWaypoint() {
+  wpCount++;
+  const id = 'wp_' + wpCount;
+  const div = document.createElement('div');
+  div.className = 'waypoint';
+  div.id = id;
+  div.innerHTML = `
+    <input type="text" placeholder="地点名" class="wp-loc">
+    <input type="time" class="wp-arrive" placeholder="着時刻">
+    <input type="time" class="wp-depart" placeholder="発時刻">
+    <select class="wp-note">
+      <option value="">-</option>
+      <option>出発</option><option>積み込み</option><option>配送</option>
+      <option>集荷</option><option>休憩</option><option>給油</option><option>その他</option>
+    </select>
+    <button class="btn-icon" onclick="removeWaypoint('${id}')">✕</button>
+  `;
+  document.getElementById('waypointList').appendChild(div);
+}
+
+function removeWaypoint(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+
+function getWaypoints() {
+  const wps = [];
+  document.querySelectorAll('#waypointList .waypoint').forEach(wp => {
+    const loc = wp.querySelector('.wp-loc').value.trim();
+    const arrive = wp.querySelector('.wp-arrive').value;
+    const depart = wp.querySelector('.wp-depart').value;
+    const note = wp.querySelector('.wp-note').value;
+    if (loc || arrive || depart) wps.push({ loc, arrive, depart, note });
+  });
+  return wps;
+}
+
+// ---- Save ----
+function saveRecord() {
+  const driverName = document.getElementById('driverName').value.trim();
+  const workDate = document.getElementById('workDate').value;
+
+  if (!driverName || !workDate) {
+    showToast('⚠️ 運転者氏名と日付は必須です', '#f7a94f');
+    return;
+  }
+
+  localStorage.setItem(DRIVER_KEY, driverName);
+
+  const odoStart = parseFloat(document.getElementById('odoStart').value) || 0;
+  const odoEnd = parseFloat(document.getElementById('odoEnd').value) || 0;
+
+  // 永続保存：車両番号・到着odo（開始終了地点は候補履歴として別管理）
+  const persist = {
+    plateArea: getPlateArea(),
+    plateNum: document.getElementById('plateNum').value,
+    odoEnd: odoEnd || null,
+  };
+  localStorage.setItem(PERSIST_KEY, JSON.stringify(persist));
+
+  // 地点履歴を更新（直近10件）
+  const startVal = document.getElementById('startLocation').value.trim();
+  const endVal   = document.getElementById('endLocation').value.trim();
+  addLocationHistory('start', startVal);
+  addLocationHistory('end',   endVal);
+
+  const record = {
+    id: Date.now().toString(),
+    driverName,
+    workDate,
+    plateArea: getPlateArea(),
+    plateNum: document.getElementById('plateNum').value,
+    startLocation: document.getElementById('startLocation').value,
+    startDatetime: document.getElementById('startDatetime').value,
+    endLocation: document.getElementById('endLocation').value,
+    endDatetime: document.getElementById('endDatetime').value,
+    odoStart,
+    odoEnd,
+    distance: odoEnd - odoStart,
+    waypoints: getWaypoints(),
+    handoverLocation: document.getElementById('handoverLocation').value,
+    handoverDatetime: document.getElementById('handoverDatetime').value,
+    // Waiting
+    hasWaiting: document.getElementById('waitingToggle').checked,
+    waitLocation: document.getElementById('waitLocation').value,
+    waitArrivalSpec: document.getElementById('waitArrivalSpec').value,
+    waitArrivalActual: document.getElementById('waitArrivalActual').value,
+    waitWorkStart: document.getElementById('waitWorkStart').value,
+    waitWorkEnd: document.getElementById('waitWorkEnd').value,
+    waitSubStart: document.getElementById('waitSubStart').value,
+    waitSubEnd: document.getElementById('waitSubEnd').value,
+    waitDepart: document.getElementById('waitDepart').value,
+    waitNote: document.getElementById('waitNote').value,
+    // Cargo
+    hasCargo: document.getElementById('cargoToggle').checked,
+    cargoLocation: document.getElementById('cargoLocation').value,
+    cargoStart: document.getElementById('cargoStart').value,
+    cargoEnd: document.getElementById('cargoEnd').value,
+    cargoContent: document.getElementById('cargoContent').value,
+    cargoConfirm: document.getElementById('cargoConfirm').value,
+    cargoNote: document.getElementById('cargoNote').value,
+    // Incident
+    hasIncident: document.getElementById('incidentToggle').checked,
+    incidentDetail: document.getElementById('incidentDetail').value,
+  };
+
+  records.unshift(record);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+  showToast('✅ 記録を保存しました');
+  clearForm(false);
+}
+
+function clearForm(resetName = true) {
+  const now = new Date();
+  if (resetName) document.getElementById('driverName').value = '';
+  document.getElementById('workDate').value = toDateStr(now);
+
+  // 開始・終了地点はリセット（候補履歴はdatalistで別途提供）
+  ['startLocation','endLocation','handoverLocation','handoverDatetime',
+   'waitLocation','waitArrivalSpec','waitArrivalActual','waitWorkStart','waitWorkEnd',
+   'waitSubStart','waitSubEnd','waitDepart','waitNote',
+   'cargoLocation','cargoStart','cargoEnd','cargoContent','cargoNote','incidentDetail'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('cargoConfirm').value = '';
+  document.getElementById('startDatetime').value = toDatetimeLocal(new Date(new Date().setHours(9,0,0)));
+  document.getElementById('endDatetime').value = toDatetimeLocal(new Date(new Date().setHours(17,0,0)));
+
+  // 走行距離計：前回の到着値をodoStartに引き継ぐ
+  const ps = localStorage.getItem(PERSIST_KEY);
+  if (ps) {
+    const p = JSON.parse(ps);
+    document.getElementById('odoStart').value = p.odoEnd || '';
+  } else {
+    document.getElementById('odoStart').value = '';
+  }
+  document.getElementById('odoEnd').value = '';
+
+  ['waitingToggle','cargoToggle','incidentToggle'].forEach(id => {
+    document.getElementById(id).checked = false;
+  });
+  ['waitingSection','cargoSection','incidentSection'].forEach(id => {
+    document.getElementById(id).classList.remove('open');
+  });
+
+  document.getElementById('waypointList').innerHTML = '';
+  wpCount = 0;
+  addWaypoint();
+}
+
+// ---- List / Render ----
+function renderList() {
+  const filterName = document.getElementById('filterName').value.toLowerCase();
+  const filterMonth = document.getElementById('filterMonth').value;
+
+  let filtered = records;
+  if (filterName) filtered = filtered.filter(r => r.driverName.toLowerCase().includes(filterName));
+  if (filterMonth) filtered = filtered.filter(r => r.workDate.startsWith(filterMonth));
+
+  // Stats
+  const totalKm = records.reduce((s,r) => s + (r.distance || 0), 0);
+  const thisMonth = (() => {
+    const now = new Date();
+    const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    return records.filter(r => r.workDate.startsWith(ym)).length;
+  })();
+
+  document.getElementById('statTotal').textContent = records.length;
+  document.getElementById('statKm').textContent = totalKm.toLocaleString();
+  document.getElementById('statMonth').textContent = thisMonth;
+
+  const container = document.getElementById('recordList');
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="empty-state"><div class="icon">📭</div><p>記録がありません</p></div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(r => `
+    <div class="record-item" onclick="showDetail('${r.id}')">
+      <div class="record-date">${r.workDate}</div>
+      <div class="record-info">
+        <div class="record-name">${r.driverName}</div>
+        <div class="record-sub">${r.plateArea} ${r.plateNum} | ${r.startLocation || '-'} → ${r.endLocation || '-'}</div>
+      </div>
+      <div class="record-km">${r.distance > 0 ? r.distance + ' km' : '-'}</div>
+      <div class="record-actions" onclick="event.stopPropagation()">
+        <button class="btn-sm" onclick="showDetail('${r.id}')">詳細</button>
+        <button class="btn-sm del" onclick="deleteRecord('${r.id}')">削除</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function deleteRecord(id) {
+  if (!confirm('この記録を削除しますか？')) return;
+  records = records.filter(r => r.id !== id);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+  renderList();
+  showToast('🗑️ 削除しました', '#f74f6a');
+}
+
+// ---- Detail Modal ----
+function showDetail(id) {
+  const r = records.find(x => x.id === id);
+  if (!r) return;
+
+  const fmt = v => v || '-';
+  const fmtDt = v => v ? v.replace('T',' ') : '-';
+
+  let wpTable = '';
+  if (r.waypoints && r.waypoints.length > 0) {
+    wpTable = `<table class="waypoint-table">
+      <tr><th>地点</th><th>着時刻</th><th>発時刻</th><th>備考</th></tr>
+      ${r.waypoints.map(w => `<tr><td>${fmt(w.loc)}</td><td>${fmt(w.arrive)}</td><td>${fmt(w.depart)}</td><td>${fmt(w.note)}</td></tr>`).join('')}
+    </table>`;
+  } else {
+    wpTable = '<span style="color:var(--text-muted);font-size:13px">なし</span>';
+  }
+
+  document.getElementById('modalTitle').textContent = `業務記録 — ${r.workDate} ${r.driverName}`;
+  document.getElementById('modalBody').innerHTML = `
+    <div class="detail-section">
+      <div class="detail-section-title">基本情報</div>
+      <div class="detail-grid">
+        <div class="detail-item"><div class="detail-label">運転者</div><div class="detail-value">${fmt(r.driverName)}</div></div>
+        <div class="detail-item"><div class="detail-label">日付</div><div class="detail-value">${fmt(r.workDate)}</div></div>
+        <div class="detail-item"><div class="detail-label">車両番号</div><div class="detail-value">${fmt(r.plateArea)} ${fmt(r.plateNum)}</div></div>
+        <div class="detail-item"><div class="detail-label">走行距離</div><div class="detail-value">${r.distance > 0 ? r.distance + ' km' : '-'}</div></div>
+      </div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">業務開始・終了</div>
+      <div class="detail-grid">
+        <div class="detail-item"><div class="detail-label">開始地点</div><div class="detail-value">${fmt(r.startLocation)}</div></div>
+        <div class="detail-item"><div class="detail-label">開始日時</div><div class="detail-value">${fmtDt(r.startDatetime)}</div></div>
+        <div class="detail-item"><div class="detail-label">終了地点</div><div class="detail-value">${fmt(r.endLocation)}</div></div>
+        <div class="detail-item"><div class="detail-label">終了日時</div><div class="detail-value">${fmtDt(r.endDatetime)}</div></div>
+        <div class="detail-item"><div class="detail-label">距離計（出発）</div><div class="detail-value">${r.odoStart ? r.odoStart + ' km' : '-'}</div></div>
+        <div class="detail-item"><div class="detail-label">距離計（到着）</div><div class="detail-value">${r.odoEnd ? r.odoEnd + ' km' : '-'}</div></div>
+      </div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">主な経過地点</div>
+      ${wpTable}
+    </div>
+    ${r.handoverLocation || r.handoverDatetime ? `
+    <div class="detail-section">
+      <div class="detail-section-title">業務交替</div>
+      <div class="detail-grid">
+        <div class="detail-item"><div class="detail-label">交替地点</div><div class="detail-value">${fmt(r.handoverLocation)}</div></div>
+        <div class="detail-item"><div class="detail-label">交替日時</div><div class="detail-value">${fmtDt(r.handoverDatetime)}</div></div>
+      </div>
+    </div>` : ''}
+    ${r.hasWaiting ? `
+    <div class="detail-section">
+      <div class="detail-section-title">30分以上待機</div>
+      <div class="detail-grid">
+        <div class="detail-item"><div class="detail-label">集貨地点等</div><div class="detail-value">${fmt(r.waitLocation)}</div></div>
+        <div class="detail-item"><div class="detail-label">備考</div><div class="detail-value">${fmt(r.waitNote)}</div></div>
+        <div class="detail-item"><div class="detail-label">到着指定日時</div><div class="detail-value">${fmtDt(r.waitArrivalSpec)}</div></div>
+        <div class="detail-item"><div class="detail-label">実際の到着</div><div class="detail-value">${fmtDt(r.waitArrivalActual)}</div></div>
+        <div class="detail-item"><div class="detail-label">荷役作業</div><div class="detail-value">${fmtDt(r.waitWorkStart)} 〜 ${fmtDt(r.waitWorkEnd)}</div></div>
+        <div class="detail-item"><div class="detail-label">附帯業務</div><div class="detail-value">${fmtDt(r.waitSubStart)} 〜 ${fmtDt(r.waitSubEnd)}</div></div>
+      </div>
+    </div>` : ''}
+    ${r.hasCargo ? `
+    <div class="detail-section">
+      <div class="detail-section-title">荷役作業等</div>
+      <div class="detail-grid">
+        <div class="detail-item"><div class="detail-label">集貨地点等</div><div class="detail-value">${fmt(r.cargoLocation)}</div></div>
+        <div class="detail-item"><div class="detail-label">荷主の確認</div><div class="detail-value">${fmt(r.cargoConfirm)}</div></div>
+        <div class="detail-item"><div class="detail-label">作業時間</div><div class="detail-value">${fmtDt(r.cargoStart)} 〜 ${fmtDt(r.cargoEnd)}</div></div>
+        <div class="detail-item"><div class="detail-label">作業内容</div><div class="detail-value">${fmt(r.cargoContent)}</div></div>
+      </div>
+    </div>` : ''}
+    ${r.hasIncident ? `
+    <div class="detail-section">
+      <div class="detail-section-title">事故・異常</div>
+      <div class="detail-item"><div class="detail-label">概要及び要因</div><div class="detail-value" style="line-height:1.6">${fmt(r.incidentDetail)}</div></div>
+    </div>` : ''}
+  `;
+
+  document.getElementById('modalBackdrop').classList.add('open');
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('modalBackdrop')) closeModalDirect();
+}
+
+function closeModalDirect() {
+  document.getElementById('modalBackdrop').classList.remove('open');
+}
+
+// ---- CSV ----
+// ---- JSON Backup / Restore ----
+function exportJSON() {
+  if (records.length === 0) { showToast('⚠️ 保存する記録がありません', '#f7a94f'); return; }
+  const payload = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    records,
+    locationHistory: (() => { try { return JSON.parse(localStorage.getItem(LOC_HISTORY_KEY)) || {}; } catch { return {}; } })(),
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const dateStr = new Date().toISOString().slice(0,10);
+  a.download = `ぽーたる_バックアップ_${dateStr}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('💾 JSONバックアップを保存しました');
+}
+
+function importJSON(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const payload = JSON.parse(e.target.result);
+      if (!payload.records || !Array.isArray(payload.records)) throw new Error('invalid');
+      const count = payload.records.length;
+      if (!confirm(`${count}件の記録を復元します。\n現在の記録と統合されます（重複はスキップ）。\nよろしいですか？`)) return;
+
+      // IDで重複チェックしながら統合
+      const existingIds = new Set(records.map(r => r.id));
+      const newRecords = payload.records.filter(r => !existingIds.has(r.id));
+      records = [...records, ...newRecords].sort((a,b) => b.workDate.localeCompare(a.workDate));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+
+      // 地点履歴も復元（統合）
+      if (payload.locationHistory) {
+        const current = (() => { try { return JSON.parse(localStorage.getItem(LOC_HISTORY_KEY)) || { start:[], end:[] }; } catch { return { start:[], end:[] }; } })();
+        ['start','end'].forEach(type => {
+          const merged = [...new Set([...(current[type]||[]), ...(payload.locationHistory[type]||[])])].slice(0,5);
+          current[type] = merged;
+        });
+        localStorage.setItem(LOC_HISTORY_KEY, JSON.stringify(current));
+      }
+
+      renderList();
+      showToast(`✅ ${newRecords.length}件を復元しました（重複${count - newRecords.length}件スキップ）`);
+    } catch {
+      showToast('❌ ファイルの形式が正しくありません', '#f74f6a');
+    }
+    event.target.value = ''; // reset input
+  };
+  reader.readAsText(file);
+}
+
+function downloadCSV() {
+  const filterName = document.getElementById('filterName').value.toLowerCase();
+  const filterMonth = document.getElementById('filterMonth').value;
+
+  let filtered = records;
+  if (filterName) filtered = filtered.filter(r => r.driverName.toLowerCase().includes(filterName));
+  if (filterMonth) filtered = filtered.filter(r => r.workDate.startsWith(filterMonth));
+
+  if (filtered.length === 0) { showToast('⚠️ ダウンロードする記録がありません', '#f7a94f'); return; }
+
+  const headers = [
+    '日付','運転者氏名','車両番号','開始地点','開始日時','終了地点','終了日時',
+    '距離計(出発km)','距離計(到着km)','走行距離km',
+    '交替地点','交替日時',
+    '待機あり','待機地点','荷役作業等あり','荷役作業内容','荷主確認','事故・異常あり','事故概要'
+  ];
+
+  const rows = filtered.map(r => [
+    r.workDate, r.driverName, `${r.plateArea} ${r.plateNum}`,
+    r.startLocation, r.startDatetime?.replace('T',' '),
+    r.endLocation, r.endDatetime?.replace('T',' '),
+    r.odoStart, r.odoEnd, r.distance,
+    r.handoverLocation, r.handoverDatetime?.replace('T',' '),
+    r.hasWaiting ? '有' : '無', r.waitLocation || '',
+    r.hasCargo ? '有' : '無', r.cargoContent || '', r.cargoConfirm || '',
+    r.hasIncident ? '有' : '無', r.incidentDetail || ''
+  ].map(v => `"${String(v||'').replace(/"/g,'""')}"`));
+
+  const csv = '\uFEFF' + [headers, ...rows].map(r => r.join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `業務記録_${filterMonth || new Date().toISOString().slice(0,7)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('⬇️ CSVをダウンロードしました');
+}
+
+// ---- Toast ----
+function showToast(msg, color) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = color || 'var(--success)';
+  t.style.color = color ? 'white' : '#0a1f14';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+init();
+</script>
+</body>
+</html>
